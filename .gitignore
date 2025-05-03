@@ -1,0 +1,11 @@
+# Exclude all .env files in the repository
+**/.env
+/node_api/.env
+/node_api/keys/
+/node_api/key/
+/node_api/uploads/
+/node_api/logs/
+/node_api/flask_backend/models/datasets/
+/flask_api/models/dataset
+/flask_api/models/datasets/
+/flask_api/.env

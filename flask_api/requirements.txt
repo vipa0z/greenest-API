@@ -1,0 +1,7 @@
+flask
+requests
+opencv-python
+numpy
+torch
+torchvision
+pillow
