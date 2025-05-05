@@ -11,3 +11,6 @@
 /flask_api/.env
 /node_api/node_modules
 /node_api/app.yaml
+/flask_api/app.yaml
+node_api/.env
+flask_api/.env

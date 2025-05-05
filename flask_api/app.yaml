@@ -1,8 +1,0 @@
-runtime: python39
-entrypoint: gunicorn -b :$PORT main:server
-
-
-resources:
-  cpu: 1                # one full vCPU
-  memory_gb: 2          # 2 GB RAM to safely load your model + runtime overhead
-  disk_size_gb: 4    
