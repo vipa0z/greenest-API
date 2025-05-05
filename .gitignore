@@ -10,3 +10,4 @@
 /flask_api/models/datasets/
 /flask_api/.env
 /node_api/node_modules
+/node_api/app.yaml
