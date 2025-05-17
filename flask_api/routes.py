@@ -1,125 +1,70 @@
-# scan_controller.py
 import logging
-from io import BytesIO
-import requests
-
-from flask import Blueprint, request, jsonify
-import cv2
-import numpy as np
-import torch
-import torchvision.transforms as transforms
-from PIL import Image, UnidentifiedImageError
-from models.model import SUPPORTED_TYPES, predict as predict_disease
+from flask import Blueprint, request, jsonify, current_app
 
 logger = logging.getLogger(__name__)
 
-# Flask Blueprint for prediction
+# Create a Flask Blueprint for prediction routes
 predict_bp = Blueprint('predict', __name__)
 
 @predict_bp.route('/predict', methods=['POST'])
 def predict_route():
-    print(f"[DIAG] /predict called. Raw data: {request.data}, JSON: {request.get_json()}")
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    logging.info(f"[DIAG] /predict called. Raw data: {request.data}, JSON: {request.get_json()}")
-    data = request.get_json()
-    if not data or 'image_url' not in data:
-        print("[DIAG] Request missing 'image_url'. Returning 400.")
-        return jsonify({"success": False, "message": "Missing 'image_url' in request body"}), 400
-    image_url = data['image_url']
-    controller = ScanController()
-    print('[DIAG] ScanController instance created in /predict route')
-    result, status = controller.handle_prediction_request(image_url)
-    return jsonify(result), status
-
-# ← Make sure this is **top‐level**, not indented under the class!
-def is_likely_leaf_heuristic(img_pil: Image.Image, min_leaf_color_percentage=15.0) -> bool:
+    """
+    Handle plant disease prediction endpoint.
+    
+    Expects a JSON payload with 'image_url'.
+    
+    Returns:
+        JSON response with detection results or error message
+    """
     try:
-        if not isinstance(img_pil, Image.Image):
-            raise TypeError("Input must be a PIL Image object")
-
-        img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-        if img_cv.size == 0:
-            logger.warning("Heuristic check: Image has zero dimension.")
-            return False
-
-        hsv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
-        # Green range
-        lower_green, upper_green = np.array([30,40,40]), np.array([90,255,255])
-        # Brown range
-        lower_brown, upper_brown = np.array([10,50,20]), np.array([25,255,180])
-
-        green_mask = cv2.inRange(hsv, lower_green, upper_green)
-        brown_mask = cv2.inRange(hsv, lower_brown, upper_brown)
-        total_pixels = img_cv.shape[0] * img_cv.shape[1]
-        if total_pixels == 0:
-            return False
-
-        combined = (cv2.countNonZero(green_mask) + cv2.countNonZero(brown_mask)) / total_pixels * 100
-        logger.debug(f"Heuristic combined%={combined:.2f}")
-        return combined >= min_leaf_color_percentage
-
+        # Get request data
+        data = request.get_json()
+        
+        # Check if image_url is provided
+        if not data or 'image_url' not in data:
+            return jsonify({
+                "status": "error",
+                "message": "Missing 'image_url' parameter"
+            }), 400
+        
+        image_url = data['image_url']
+        
+        # Get the ScanController instance from app config
+        scan_controller = current_app.config.get('SCAN_CONTROLLER')
+        if not scan_controller:
+            logger.error("ScanController not found in app config")
+            return jsonify({
+                "status": "error",
+                "message": "Service not initialized properly"
+            }), 500
+        
+        # Process the image through the detection pipeline
+        result = scan_controller.process_image(image_url)
+        
+        # Return response based on processing result
+        if result.get("status") == "error":
+            return jsonify(result), 400
+        else:
+            return jsonify(result), 200
+            
     except Exception as e:
-        logger.error(f"Heuristic error: {e}")
-        return False
+        logger.exception(f"Error processing prediction request: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Error processing request: {str(e)}"
+        }), 500
 
-
-class ScanController:
-    def __init__(self, image_size=(256, 256)):
-        self.logger = logging.getLogger(__name__)
-        self.preprocess_transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.ToTensor(),
-        ])
-        self.logger.info("ScanController initialized.")
-
-    def _process_pil_image(self, img_pil: Image.Image):
-        # ← calls the **global** is_likely_leaf_heuristic
-        if not is_likely_leaf_heuristic(img_pil):
-            return {
-                "success": False,
-                "message": "The image does not appear to be a leaf…",
-                "supported_plants": SUPPORTED_TYPES
-            }
-        try:
-            return self.preprocess_transform(img_pil.convert('RGB'))
-        except Exception as e:
-            self.logger.error(f"Preprocess error: {e}")
-            return {"success": False, "message": "Error during preprocessing"}
-
-    def handle_prediction_request(self, image_url: str):
-        # 1) Validate
-        if not isinstance(image_url, str) or not image_url:
-            return {"success": False, "message": "'image_url' must be a non-empty string"}, 400
-
-        # 2) Download
-        try:
-            resp = requests.get(image_url, timeout=5)
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            self.logger.error(f"Download failed: {e}")
-            return {"success": False, "message": "Could not download image"}, 400
-
-        # 3) Open PIL
-        try:
-            img_pil = Image.open(BytesIO(resp.content)).convert('RGB')
-        except UnidentifiedImageError:
-            return {"success": False, "message": "URL did not contain a valid image"}, 400
-
-        # 4) Heuristic + preprocess
-        processed = self._process_pil_image(img_pil)
-        if isinstance(processed, dict):
-            return {
-                "success": False,
-                "message": processed["message"],
-                "supported_plants": processed.get("supported_plants", [])
-            }, 400
-
-        # 5) Prediction
-        try:
-            result = predict_disease(processed)
-        except Exception as e:
-            self.logger.error(f"Prediction error: {e}")
-            return {"success": False, "message": "Prediction failed"}, 500
-
-        return {"success": True, "scanResult": result}, 200
+# Health check endpoint
+@predict_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    Simple health check endpoint to verify API is running.
+    """
+    model_loaded = current_app.config.get('MODEL_LOADED', False)
+    scan_controller = current_app.config.get('SCAN_CONTROLLER') is not None
+    
+    return jsonify({
+        "status": "healthy",
+        "model_loaded": model_loaded,
+        "scan_controller_initialized": scan_controller
+    }), 200

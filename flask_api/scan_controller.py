@@ -1,126 +1,150 @@
-# scan_controller.py
-print('[DIAG] scan_controller.py loaded')
 import logging
-from io import BytesIO
 import requests
-
-import cv2
+import os
+import tempfile
+from PIL import Image, UnidentifiedImageError
+from io import BytesIO
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from PIL import Image, UnidentifiedImageError
 from models.model import SUPPORTED_TYPES, predict as predict_disease
 
 logger = logging.getLogger(__name__)
 
-# ← Make sure this is **top‐level**, not indented under the class!
-def is_likely_leaf_heuristic(img_pil: Image.Image, min_leaf_color_percentage=15.0) -> bool:
-    try:
-        if not isinstance(img_pil, Image.Image):
-            raise TypeError("Input must be a PIL Image object")
-
-        img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-        if img_cv.size == 0:
-            logger.warning("Heuristic check: Image has zero dimension.")
-            return False
-
-        hsv = cv2.cvtColor(img_cv, cv2.COLOR_BGR2HSV)
-        # Green range
-        lower_green, upper_green = np.array([30,40,40]), np.array([90,255,255])
-        # Brown range
-        lower_brown, upper_brown = np.array([10,50,20]), np.array([25,255,180])
-
-        green_mask = cv2.inRange(hsv, lower_green, upper_green)
-        brown_mask = cv2.inRange(hsv, lower_brown, upper_brown)
-        total_pixels = img_cv.shape[0] * img_cv.shape[1]
-        if total_pixels == 0:
-            return False
-
-        combined = (cv2.countNonZero(green_mask) + cv2.countNonZero(brown_mask)) / total_pixels * 100
-        logger.debug(f"Heuristic combined%={combined:.2f}")
-        return combined >= min_leaf_color_percentage
-
-    except Exception as e:
-        logger.error(f"Heuristic error: {e}")
-        return False
-
-
 class ScanController:
-    def __init__(self, image_size=(256, 256)):
-        print('[DIAG] ScanController.__init__ called')
-        self.logger = logging.getLogger(__name__)
-        self.preprocess_transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.ToTensor(),
-        ])
-        self.logger.info("ScanController initialized.")
-
-    def _process_pil_image(self, img_pil: Image.Image):
-        # ← calls the **global** is_likely_leaf_heuristic
-        if not is_likely_leaf_heuristic(img_pil):
-            return {
-                "success": False,
-                "message": "The image does not appear to be a leaf…",
-                "supported_plants": SUPPORTED_TYPES
-            }
+    def __init__(self):
+        from models.model import ObjectDetectionModel
+        logger.info("Initializing ScanController...")
+        self.leaf_detection_model = ObjectDetectionModel()
+        logger.info("ScanController initialized successfully")
+        
+    def download_image_from_url(self, image_url):
         try:
-            return self.preprocess_transform(img_pil.convert('RGB'))
+            response = requests.get(image_url, stream=True, timeout=10)
+            response.raise_for_status()
+            
+            # Create a temporary file with .jpg extension
+            temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
+            temp_file_path = temp_file.name
+            
+            # Write image data to temporary file
+            with open(temp_file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                    
+            logger.info(f"Image downloaded and saved to temporary file: {temp_file_path}")
+            return temp_file_path
         except Exception as e:
-            self.logger.error(f"Preprocess error: {e}")
-            return {"success": False, "message": "Error during preprocessing"}
-
-    def handle_prediction_request(self, image_url: str):
-        print(f"[DIAG] Entered handle_prediction_request with image_url: {image_url}")
-        logging.basicConfig(level=logging.INFO)
-        logging.info(f"[DIAG] Entered handle_prediction_request with image_url: {image_url}")
-        # 1) Validate
-        if not isinstance(image_url, str) or not image_url:
-            print("[DIAG] image_url is not a valid non-empty string. Returning 400.")
-            return {"success": False, "message": "'image_url' must be a non-empty string"}, 400
-
-        print("[DIAG] Passed validation, starting download...")
-        logging.info("[DIAG] Passed validation, starting download...")
-        # 2) Download
+            logger.error(f"Error downloading image from URL: {e}")
+            raise
+    
+    def detect_leaf(self, image_url):
+        """
+        Detect if the image contains a leaf using the object detection model.
+        
+        Args:
+            image_url: URL of the image to analyze
+            
+        Returns:
+            tuple: (is_leaf_detected, plant_type, image_path)
+        """
         try:
-            resp = requests.get(image_url, timeout=5)
-            print(f"[DIAG] Downloaded image. Status: {resp.status_code}, Headers: {resp.headers}")
-            logging.info(f"[DIAG] Downloaded image. Status: {resp.status_code}, Headers: {resp.headers}")
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            print(f"[DIAG] Download failed: {e}")
-            logging.error(f"[DIAG] Download failed: {e}")
-            return {"success": False, "message": f"Could not download image: {e}"}, 400
-
-        print("[DIAG] Download succeeded, attempting to open image with PIL...")
-        logging.info("[DIAG] Download succeeded, attempting to open image with PIL...")
-        # 3) Open PIL
-        try:
-            img_pil = Image.open(BytesIO(resp.content)).convert('RGB')
-            print("[DIAG] PIL image opened successfully.")
-            logging.info("[DIAG] PIL image opened successfully.")
-        except UnidentifiedImageError as e:
-            print(f"[DIAG] PIL could not identify image: {e}")
-            logging.error(f"[DIAG] PIL could not identify image: {e}")
-            return {"success": False, "message": "URL did not contain a valid image (UnidentifiedImageError)"}, 400
+            # Download the image to a temporary file
+            image_path = self.download_image_from_url(image_url)
+            
+            # Perform leaf detection using YOLO model
+            results = self.leaf_detection_model.predict(image_path)
+            
+            # Check if any objects were detected (leaf)
+            if len(results[0].boxes) > 0:
+                # Extract the class name from the first detected object
+                class_idx = int(results[0].boxes.cls[0].item())
+                plant_type = results[0].names[class_idx]
+                
+                logger.info(f"Leaf detected in image: {plant_type} with {len(results[0].boxes)} detections")
+                return True, plant_type, image_path
+            else:
+                logger.info("No leaf detected in image")
+                # Clean up the temporary file if no leaf detected
+                try:
+                    os.unlink(image_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary file {image_path}: {e}")
+                return False, None, None
         except Exception as e:
-            print(f"[DIAG] Unexpected error opening image: {e}")
-            logging.error(f"[DIAG] Unexpected error opening image: {e}")
-            return {"success": False, "message": f"Error opening image: {e}"}, 400
+            logger.error(f"Error during leaf detection: {e}")
+            raise
+    
+    def is_supported_leaf(self, plant_type):
+        """Check if the detected plant is in the list of supported plants."""
+        if plant_type in SUPPORTED_TYPES:
+            print(" supported type$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", plant_type)
+        return plant_type in SUPPORTED_TYPES
+    
 
-        # 4) Heuristic + preprocess
-        processed = self._process_pil_image(img_pil)
-        if isinstance(processed, dict):
-            return {
-                "success": False,
-                "message": processed["message"],
-                "supported_plants": processed.get("supported_plants", [])
-            }, 400
-
-        # 5) Prediction
+    def process_image(self, image_url):
         try:
-            result = predict_disease(processed)
+            is_leaf, plant_type, image_path = self.detect_leaf(image_url)
+            
+            if not is_leaf:
+                return {
+                    "status": "error",
+                    "success": False,
+                 "message": "No leaf detected in the image"}
+            
+            if not self.is_supported_leaf(plant_type):
+                # Clean up the temporary file if plant type not supported
+                try:
+                    os.unlink(image_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary file {image_path}: {e}")
+                return {
+                    "status": "error",
+                 "success": False,
+                  "message": f"The image you've uploaded is not of a leaf that is currently supported, Please ensure the leaf you're trying to upload is supported and try again."
+                  }
+            
+            try:
+                img = Image.open(image_path).convert('RGB')
+                
+                transform = transforms.Compose([
+                    transforms.Resize((256, 256)),
+                    transforms.ToTensor(),
+                
+                ])
+                
+                img_tensor = transform(img)
+                
+                # Use the imported predict_disease function
+                prediction_result = predict_disease(img_tensor)
+                
+                # Clean up the temporary file after processing
+                try:
+                    os.unlink(image_path)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary file {image_path}: {e}")
+                
+                if "error" in prediction_result:
+                    return {"status": "error", "message": prediction_result["error"]}
+                
+                disease_name = prediction_result["disease"]
+                
+                return {
+                    "status": "success",
+                    "disease": disease_name,
+                    "confidence": prediction_result["confidence"]
+                }
+                    
+            except Exception as e:
+                # Clean up the temporary file in case of error
+                try:
+                    os.unlink(image_path)
+                except Exception as cleanup_e:
+                    logger.warning(f"Failed to delete temporary file {image_path}: {cleanup_e}")
+                    
+                logger.error(f"Error processing image for disease detection: {e}")
+                return {"status": "error", "message": f"Error in disease detection: {str(e)}"}
+                    
         except Exception as e:
-            self.logger.error(f"Prediction error: {e}")
-            return {"success": False, "message": "Prediction failed"}, 500
-
-        return {"success": True, "scanResult": result}, 200
+            logger.error(f"Error processing image: {e}")
+            return {"status": "error", "message": f"Error processing image: {str(e)}"}

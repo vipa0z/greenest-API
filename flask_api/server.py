@@ -16,15 +16,9 @@ logger = logging.getLogger(__name__)
 # --- Initialize Flask App ---
 app = Flask(__name__)
 
-
-
-# --- Load AI Model and Initialize Controller (ONCE at Startup) ---
-print("Loading AI model and initializing ScanController......")
-
 try:
     scan_controller_instance = ScanController() # Initialize the controller once
     app.config['SCAN_CONTROLLER'] = scan_controller_instance # Store instance in app config
-    logger.info("ScanController initialized and added to app config.")
 except Exception as e:
      logger.exception("FATAL: Failed to initialize ScanController.")
      app.config['SCAN_CONTROLLER'] = None
@@ -32,14 +26,11 @@ except Exception as e:
 
 # --- Register Blueprints ---
 app.register_blueprint(predict_bp, url_prefix='/api')
-logger.info("Registered 'predict_api' blueprint with prefix /api.")
 
-# --- Optional: Add a Root/Health Check Endpoint ---
 try:
     logger.info("Starting model loading...")
-    print("loading AI MODEL................")
-    load_model() # Load the model defined in gem.py
-    print("LOADED!")
+    
+    load_model() 
 
     logger.info("Model loading complete.")
     app.config['MODEL_LOADED'] = True

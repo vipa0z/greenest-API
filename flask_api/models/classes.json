@@ -41,19 +41,22 @@
 ], 
 
 "supported_types": [
-        "Apple",
-        "Blueberry",
-        "Cherry, including_sour",
-        "maize Corn",
-        "Grape",
-        "Peach",
-        "Bell Pepper",
-        "Potato",
-        "Raspberry",
-        "Soybean",
-        "Strawberry",
-        "Tomato",
-        "Soybean",
-        "Squash"
-    ]
+    "apple",
+    "blueberry",
+    "cherry",
+    "corn",
+    "grape",
+    "peach",
+    "bell pepper",
+    "bell-pepper",
+    "bell_pepper",
+    "pepper",
+    "potato",
+    "raspberry",
+    "strawberry",
+    "tomato",
+    "soybean",
+    "squash"
+]
+
 }

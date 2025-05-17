@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 import os
+from ultralyticsplus import YOLO, render_result
+
+
 # 2. Add near Configuration section:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 classes_path = os.path.join(script_dir, "classes.json")
@@ -53,6 +56,27 @@ def ConvBlock(in_channels, out_channels, pool=False):
     if pool:
         layers.append(nn.MaxPool2d(4))
     return nn.Sequential(*layers)
+
+
+
+
+
+
+    
+class ObjectDetectionModel:
+    def __init__(self):
+        self.model = YOLO('foduucom/plant-leaf-detection-and-classification')
+        # Set model parameters
+        self.model.overrides['conf'] = 0.25  # NMS confidence threshold
+        self.model.overrides['iou'] = 0.45  # NMS IoU threshold
+        self.model.overrides['agnostic_nms'] = False  # NMS class-agnostic
+        self.model.overrides['max_det'] = 1000  # maximum number of detections per image
+
+    def predict(self, image_path):
+        results = self.model.predict(image_path)
+        return results
+
+
 
 class ResNet9(ImageClassificationBase):
     def __init__(self, in_channels, num_classes):
