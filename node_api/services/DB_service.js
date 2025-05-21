@@ -109,11 +109,9 @@ class DBService { // Db service holds functions for DB operations get/POST for u
                 imageMetadata
             };
             try {
-                const scanEntry = new Scan(data);
-                let savedScan = await  scanEntry.save();
-                return {
-                    scanId: savedScan._id,
-                }
+                const scan = new Scan(data);
+                const scanId = await  scan.save();
+                return scanId._id.toString();
 
             } catch (error) {
             throw new Error(`Failed to save scan entry: ${error.message}`);

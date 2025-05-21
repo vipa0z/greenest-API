@@ -8,11 +8,11 @@ class DetectionService {
 
   async analyzeImageFromPath(image_url) {
     let retries = 0;
-    console.log("______________-----------SENDING REQ TO FLASK-----------------------____________________");
+    console.log("[+] sending req to flask")
     try {
       const response = await axios.post(process.env.FLASK_API_URL, {image_url}, {timeout: 60000});
-      const scanResults = response.data.scanResult;
-      
+      const scanResults = response.data;
+      if (scanResults){console.log("[+] scan successful")}
       // Extract plant name from disease string
       const plantName = scanResults.disease.split('_')[0];
       
@@ -22,26 +22,24 @@ class DetectionService {
       const isHealthy = scanResults.disease.toLowerCase().includes('healthy');
       const plantHealth = isHealthy ? 'healthy' : 'diseased';
       return {
-        isServerAvailable: true,
+        success:true,
         disease: diseaseFormatted,
         confidence: scanResults.confidence,
         plantName,
         plantHealth
       }
     } catch (err) {
-      console.log(err)
-      isServerAvailable = false;
-            if (err.status === 400) {
-        return {
-          status: 400,
-          isServerAvailable,
-          err: err.response.data
-        }
-      } else {
-        return {
-          success: false,
-          message: err.response?.message || err.message
-        }
+      if (err.status === 400) {
+        const error = new Error('Detection failed, No leaf detected in the image');
+        error.status = 400;
+        error.data = err.response?.data;
+        throw error;
+      } 
+      
+      else {
+        const error = new Error(err.response?.message || err.message || 'Detection failed');
+        error.status =  500;
+        throw error;
       }
     }
   }

@@ -17,14 +17,36 @@ exports.getRemediation = async (userId, scanId) => {
     if (!scan) {
         throw new Error("Scan not found");
     }
-    const diseaseName = scan.disease;
-    console.log(scan);
-    console.log(diseaseName);
+    const {disease, plantName, plantHealth} = scan
+    console.log(" [+] Starting disease remediation request for:", disease);
+    console.log(" [+] Selected plant health:", plantHealth);
+    console.log(" [+] Selected plant disease:", disease);
 
     
-    console.log(" [+] Starting disease remediation request for:", diseaseName);
-    const prompt = `Provide detailed information about the disease "${diseaseName}", including symptoms, causes, and, most importantly, remediation steps (treatment, management, prevention). Present it in a clear and concise way. make it 100 lines max`;
+    const prompt = `# GreenyLeaves Plant Health Assistant
 
+    You are the official plant leaf health advisor for GreenyLeaves. Your purpose is to provide expert advice on plant leaf growing care and disease remediation in a clear, structured format.
+    
+    ## PLANT INFORMATION
+    Plant: ${plantName}
+    Current Health Status: ${plantHealth}
+    Disease (if applicable): ${disease}
+    
+    ## RESPONSE REQUIREMENTS
+    1. Begin with a brief 2-line description of ${plantName}'s leaves and its distinctive characteristics.
+    2. Based on the health status (${plantHealth}):
+       - If HEALTHY: Provide optimal care instructions including watering frequency, sunlight needs, soil preferences, and seasonal considerations.
+       - If UNHEALTHY: Deliver a comprehensive analysis of "${disease}" covering:
+         * Symptoms and visual indicators
+         * Common causes and contributing factors
+         * Step-by-step treatment protocol
+         * Prevention strategies to avoid recurrence
+    3. Format your response using markdown for readability.
+    4. Keep your entire response under 120 lines.
+    5. Use bullet points and headers to organize information logically.
+    6. Focus on practical, actionable advice rather than technical botanical terminology.
+    
+    Remember to maintain a professional, authoritative tone throughout your response.`;
     // Access and validate API key from environment variables
     const apiKey = process.env.GEMINI_API_KEY;
     try {

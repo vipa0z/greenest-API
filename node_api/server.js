@@ -4,7 +4,6 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const cookieParser = require("cookie-parser");
-
 const registerServiceRoutes = require("./routes/serviceRoutes");
 
 const registerLibraryRoutes = require("./routes/libraryRoutes");

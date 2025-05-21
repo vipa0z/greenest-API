@@ -5,9 +5,7 @@ const profileController = require("../controllers/profileController");
 // const profileUpload = require("../middlewares/profileUpload");
 const GCSUploads = require("../middlewares/GCSUploads");
 const auth = require("../middlewares/auth").auth
-
 const registerAuthenticatedRoutes = (router) => { 
-
   router.get("/api/v1/verify-email", authController.verifyEmail);
 
 
@@ -46,8 +44,10 @@ const registerAuthenticatedRoutes = (router) => {
 // /users/plants for health tracking
   router.post("/api/v1/users/:userId/plants/health-tracking", auth, ScanController.trackPlant);
   router.get("/api/v1/users/:userId/plants/health-tracking", auth, ScanController.getAllTrackedPlants);
+
   router.get("/api/v1/users/:userId/plants/health-tracking/:trackedPlantId", auth, ScanController.getTrackedPlant);
 
+  // router.delete("/api/v1/users/:userId/plants/health-tracking/:trackedPlantId", auth, ScanController.deleteTrackedPlant);
 
 
 }

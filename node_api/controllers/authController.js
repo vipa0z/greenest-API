@@ -92,7 +92,7 @@ exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
     if (!token) {
-      return res.status(400).json({
+      return res.status(401).render("verifyEmail", {
         success: false,
         message: "Verification token is required",
       });
@@ -100,13 +100,13 @@ exports.verifyEmail = async (req, res) => {
 // change to emailservice
     await EmailService.verifyEmailToken(token);
 
-    return res.status(200).json({
+    return res.status(200).render("verifyEmail", {
       success: true,
       message: "Email verified successfully",
     });
   } catch (error) {
     console.error("Email verification error:", error);
-    return res.status(error.status || 400).json({
+    return res.status(error.status || 400).render("verifyEmail", {
       success: false,
       message: error.message || "Error verifying email",
     });

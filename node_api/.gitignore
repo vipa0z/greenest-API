@@ -4,7 +4,10 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
-
+node_api/.env
+node-api/.env
+node_api/key
+node_api/keys
 # Environment variables
 .env
 

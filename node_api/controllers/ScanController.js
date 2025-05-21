@@ -11,7 +11,7 @@ exports.sendForDetection = async (req, res) => {
       success:false,
       message:"UnAuthorized access to scans, Missing userId"
   })}
-  const imageUrl = req.file?.gcsUrl;
+    const imageUrl = req.file?.gcsUrl
    if (!imageUrl) {
     return res.status(400).json({
       success: false,
@@ -19,50 +19,74 @@ exports.sendForDetection = async (req, res) => {
       error: { message: "IMAGE_REQUIRED" }
     });
   }
-  try {
-    const analysisResults = await DetectionService.analyzeImageFromPath(imageUrl);
-    // analysisResults.imageMetadata = imageMetadata
-    if (analysisResults.isServerAvailable){
-    const {scanId, plantName, disease, confidence, plantHealth, remediations} = analysisResults
-    if (plantHealth === 'healthy') {
+
+try 
+   {
+    const result = await DetectionService.analyzeImageFromPath(imageUrl);
+
+    
+    if (result.success) {
+    console.log("[+] scan successful, saving to DB.....")
+    let scanId = '';
+   
+    
+    try {
+      scanId = await DBService.saveScan(userId, result);
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ message: '[-] Failed to save scan, 502' });
+    }
+    if (result.plantHealth == 'healthy'){
       return res.status(200).json({
-        message: "Plant is healthy and will not be saved to DB",
-        data:{
-          plantName,
-          plantHealth,
-          imageMetadata:{imageUrl}   
-            }
-          })
-    } 
-
-    const scanSaved = await DBService.saveScan(userId,analysisResults)
-    if (scanSaved){
-    return res.status(200).json({
-      message: "Successfully Indetified plant condition, and saved to DB",
-      data:{
-        scanId,
-        plantName,
-        disease,
-        confidence,
-        plantHealth,
-        remediations,
-        imageMetadata:{imageUrl}   
-          }
-        })
-     }
-  } } catch (err) {
-
-    return res.status(500).json({
-      success: false,
-      message: "Flask server unavailable",
-      error: {
-        message: "SERVER_ERROR, AI service unavailable",
-        details: err.flaskData || null
-      }
-    })
+        success: true,
+        message: "Plant is healthy",
+        data: {
+          message: `your ${result.plantName} leaf is healthy. you can still benefit from GreenyLeaves by getting general plant care tips and recommendations!`,
+          scanId,
+          plantHealth: result.plantHealth,
+          plantName:     result.plantName,
+          confidence:    result.confidence,
+          imageUrl
+        }
+      })
+    }
+    console.log("[+] scan saved to DB successfully")
+    
+    return res
+      .status(200)
+      .json({
+        message: "Successfully identified plant condition and saved to DB",
+        data: {
+          message: "your plant is diseased, Below is an estimate of the disease severity and recommended remediation steps",
+          scanId,
+          plantName:     result.plantName,
+          disease:       result.disease,
+          confidence:    result.confidence,
+          plantHealth:   result.plantHealth,
+          remediations:  result.remediations,
+          imageUrl
+        }
+      })
+    } // if success
+  } catch (err) {
+    if (err.status === 400) {
+      return res
+        .status(err.status)
+        .json({
+          success: false,
+          message: err.message,
+          error: err.data
+        });
+    } else {
+      console.error(err);
+      return res
+        .status(500)
+        .json({ message: 'Internal server error' });
+    }
   }
-}
-
+};
 // HISTORY/ ===================================================================================
 
 // SCANS
@@ -373,4 +397,3 @@ try {
 }
 
 }
-    
