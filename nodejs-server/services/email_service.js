@@ -30,12 +30,8 @@ class EmailService {
 
 
   async sendVerificationEmail(email, emailToken) {
-    console.log('Environment variables:', {
-      BACKEND_URL: process.env.BACKEND_URL,
-      NODE_ENV: process.env.NODE_ENV
-    });
 
-    const verificationUrl = `${process.env.BACKEND_URL}/api/v1/verify-email?token=${emailToken}`;
+    const verificationUrl = `${process.env.PROD_URL}/api/v1/verify-email?token=${emailToken}`;
     console.log('Generated URL:', verificationUrl);
 
     const msg = {
@@ -83,7 +79,7 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(email, passResetToken) {
-    const resetUrl = `${process.env.BACKEND_URL}/api/v1/reset-password?token=${passResetToken}`;
+    const resetUrl = `${process.env.PROD_URL}/api/v1/reset-password?token=${passResetToken}`;
 
     const msg = {
       to: email,
