@@ -2,7 +2,6 @@ const Scan = require('../models/scan');
 const User = require('../models/user')
 const Species = require('../models/species');
 const Favourite = require('../models/favourite');
-const storageService = require('./storage_service');
 const TrackedPlant = require("../models/trackedPlant")
 const mongoose = require('mongoose')
 class DBService { // Db service holds functions for DB operations get/POST for users, scans, library, history, favourites
@@ -52,7 +51,7 @@ class DBService { // Db service holds functions for DB operations get/POST for u
                     scanId: scan._id,
                     disease: scan.disease,
                     confidence: scan.confidence,
-                    imageMetadata: scan.imageMetadata,
+                    imageUrl: scan.imageUrl,
                     remediations: scan.remediations
                 }
                 
@@ -79,7 +78,7 @@ class DBService { // Db service holds functions for DB operations get/POST for u
                     plantHealth: scanEntity.plantHealth,
                     disease: scanEntity.disease,
                     confidence: scanEntity.confidence,
-                    imageMetadata: scanEntity.imageMetadata,
+                    imageUrl: scanEntity.imageUrl,
                     remediations: scanEntity.remediations
                 }
 
@@ -95,9 +94,9 @@ class DBService { // Db service holds functions for DB operations get/POST for u
 
     // HISTORY aka SCANS ===========================================================================
     // save scan and get scanId
-    async saveScan(userId,scanData) {
+    async saveScan(userId,scanData,imageUrl) {
         
-        const {disease, confidence, remediations, imageMetadata, plantName, plantHealth} = scanData;
+        const {disease, confidence, remediations, plantName, plantHealth} = scanData;
         
         const data = {
                 user: userId,
@@ -106,7 +105,7 @@ class DBService { // Db service holds functions for DB operations get/POST for u
                 disease,
                 confidence,
                 remediations,
-                imageMetadata
+                imageUrl
             };
             try {
                 const scan = new Scan(data);
@@ -125,11 +124,6 @@ class DBService { // Db service holds functions for DB operations get/POST for u
     
         if (!scan) {
             return null;
-        }
-    
-        // 2. Delete the file using storage service
-        if (scan.image_metadata && scan.image_metadata.image_path) {
-            await storageService.deleteFile(scan.image_metadata.image_path);
         }
     
         // 3. Delete the database record
@@ -262,7 +256,7 @@ async trackPlantSpecies(userId, scan) {
       } else {
         // 3. Add scanId to illnessHistory and save and change image  
         trackedPlant.illnessHistory.push(scan.scanId);
-        trackedPlant.imagePath = scan.imageMetadata.imagePath;
+        trackedPlant.imageUrl = scan.imageUrl;
         trackedPlant.plantHealth = scan.plantHealth;
         await trackedPlant.save();
         console.log("Added new scanId to existing tracked plant.");
@@ -273,7 +267,7 @@ async trackPlantSpecies(userId, scan) {
         user: userId,
         plantName: scan.plantName,
         illnessHistory: [scan.scanId],
-        imagePath: scan.imageMetadata.imagePath,
+        imageUrl: scan.imageUrl,
         plantHealth: scan.plantHealth
 
       });
@@ -299,7 +293,7 @@ async trackPlantSpecies(userId, scan) {
           trackedPlantId: trackedPlant._id,
             plantName: trackedPlant.plantName,
             plantHealth: trackedPlant.plantHealth,
-            imagePath: trackedPlant.imagePath
+            imageUrl: trackedPlant.imageUrl,
         }));
 
         return mappedTrackedPlants;
@@ -322,7 +316,7 @@ async trackPlantSpecies(userId, scan) {
                 trackedPlantId: trackedPlant._id,
                 plantName: trackedPlant.plantName,
                 plantHealth: trackedPlant.plantHealth,
-                imagePath: trackedPlant.imagePath,
+                imageUrl: trackedPlant.imageUrl,
                 illnessHistory:cleanedIllnessHistory
             }
             return cleanedTrackedPlant;

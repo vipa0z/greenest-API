@@ -12,6 +12,8 @@ const registerAuthenticatedRoutes = (router) => {
   router.post("/api/v1/register", authController.register);
   router.post("/api/v1/login", authController.login);
 
+  router.get("/api/v1/resend-verification", authController.resendToken);
+
 
   
   router.post("/api/v1/forgot-password", authController.getResetPasswordToken);

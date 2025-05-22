@@ -99,7 +99,6 @@ exports.trackPlant = async (req, res) => {
           }
         });
       }
-        console.log(scan.imageMetadata)
         const trackedPlant = await DBService.trackPlantSpecies(userId,scan)
   
         if (trackedPlant.isTracked){

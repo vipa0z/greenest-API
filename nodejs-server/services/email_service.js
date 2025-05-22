@@ -26,7 +26,21 @@ class EmailService {
     });
     return user;
   }
+  async resendToken(email) {
+    const user = await User.findOne({ email })
+    if (!user) {
+      const error = new Error("User not found");
+      error.status = 404;
+      throw error;
+    }
+    if (user.isEmailVerified) {
+      const error = new Error("User already verified");
+      error.status = 400;
+      throw error;
+    }
+    this.sendVerificationEmail(email, user.emailVerificationToken);
 
+  }
 
 
   async sendVerificationEmail(email, emailToken) {
@@ -38,15 +52,73 @@ class EmailService {
       to: email,
       from: `${process.env.SENDER_EMAIL}`,
       subject: "Verify Your Email - GreenNest",
-      text: `Please verify your email by clicking on the following link: ${verificationUrl}`,
-      html: `
-        <h1>Welcome to GreenNest!</h1>
-        <p>Please verify your email by clicking on the following link:</p>
-        <h2><a href="${verificationUrl}">Verify Email</a></h2>
-        <p>This link will expire in 24 hours.</p>
-      `,
-    };
+      html: `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Verify Your Email</title>
+  </head>
+  <body style="background-color:rgb(205, 212, 200); margin: 0; padding: 0; font-family: Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center" style="padding: 25px 0;">
+          <a href="https://greenyleaves.com" target="_blank" style="font-size: 22px; font-weight: bold; color: rgb(32, 73, 14); text-decoration: none;">
+            GreenyLeaves
+          </a>
+        </td>
+      </tr>
 
+      <tr>
+        <td align="center">
+          <table width="570" cellpadding="0" cellspacing="0" style="background-color:rgb(238, 238, 238); border-radius: 6px; border: 1px solidrgb(225, 250, 209); padding: 32px;">
+            <tr>
+              <td>
+                <h1 style="font-size: 20px; color: rgb(0, 0, 0);">Welcome to GreenyLeaves!</h1>
+                <p style="font-size: 16px; color: #334155;">
+                  Please confirm your email address by clicking the button below.
+                </p>
+
+                <table align="center" style="margin: 30px auto;">
+                  <tr>
+                    <td>
+                      <a href="${process.env.PROD_URL}/verify-email?token=${emailToken}" style="background-color:rgb(65, 155, 8); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
+                        Verify Email
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size: 14px; color: #64748b;">
+                  If you didn’t create a GreenyLeaves account, you can safely ignore this email.
+                </p>
+
+                <p style="font-size: 14px; color: #64748b;">
+                  Or copy and paste this URL into your browser:<br />
+                  <a href="${process.env.PROD_URL}/verify-email?token=${emailToken}" style="color: rgb(84, 213, 15);">${process.env.PROD_URL}/verify-email?token=${emailToken}</a>
+                </p>
+
+                <p style="font-size: 14px; color: #64748b;">– The GreenyLeaves Team</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td align="center" style="padding: 20px; color: #9ca3af; font-size: 12px;">
+          &copy; 2025 GreenyLeaves. All rights reserved.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
+
+
+      ,
+      trackingSettings: {
+        clickTracking: { enable: false, enableText: false },
+      },
+    };
     try {
       await sgMail.send(msg);
       console.log("Verification email sent successfully to:", email);

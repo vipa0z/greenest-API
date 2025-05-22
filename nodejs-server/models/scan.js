@@ -31,11 +31,10 @@ const ScanSchema = new mongoose.Schema({
     default: null,
     required:false,
   },
-  imageMetadata: {
-    imageUrl: { type: String, required: false },
-    imageName: { type: String, required: false },
-    imagePath: { type: String, required: false }
-  }
+imageUrl:{
+    type: String,
+    required: true,
+},
 });
 
 ScanSchema.index({ user: 1, scanTime: -1 });

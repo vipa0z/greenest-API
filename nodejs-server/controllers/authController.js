@@ -146,8 +146,6 @@ exports.login = async (req, res) => {
       message: "Login successful",
       data:{
         token:jwt,
-        email,
-         firstName,lastName,
         userId
       },
     });
@@ -256,4 +254,28 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
+exports.resendToken = async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+    
+    await EmailService.resendToken(email);
+    
+    return res.status(200).json({
+      success: true,
+      message: "Verification token resent successfully",
+    });
+  } catch (error) {
+    console.error("Error resending verification token:", error);
+    return res.status(error.status || 500).json({
+      success: false,
+      message: error.message || "Error resending verification token",
+    });
+  }
+}

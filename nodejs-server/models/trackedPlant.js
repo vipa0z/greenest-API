@@ -15,12 +15,7 @@ const trackedPlantSchema = new mongoose.Schema({
     type: String,
     required: false
   },
-  plantHealth: {
-    type: String,
-    required: true
-  },
-
-  imagePath: {
+  imageUrl: {
     type: String,
     required: false
   },

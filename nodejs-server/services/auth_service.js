@@ -12,10 +12,19 @@ class AuthService {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      const message = new Error("User already exists");
-      throw message;
-    }
-
+      
+      if (!existingUser.isEmailVerified) {
+        const error = new Error("User already exists, please verify your email");
+        error.status = 400;
+        throw error;
+      }
+      else {
+      error = new Error("User already exists");
+      error.status = 409;
+      throw error
+  }
+  }
+    else {
     try {
       // Create new user
       const hashedPassword = await this.hashPassword(password);
@@ -49,6 +58,7 @@ class AuthService {
       newError.status = 500;
       throw newError;
     }
+  }
   }
 
   

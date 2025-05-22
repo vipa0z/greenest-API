@@ -31,7 +31,7 @@ try
    
     
     try {
-      scanId = await DBService.saveScan(userId, result);
+      scanId = await DBService.saveScan(userId, result,imageUrl);
     } catch (error) {
       console.error(error);
       return res
@@ -179,11 +179,11 @@ exports.saveToScans = async (req, res) => {
         message:"UnAuthorized access to profile, Missing userId"
     })}
 
-  const { disease, imageMetadata, confidence ,remediations, plantName, plantHealth} = req.body;
+  const { disease, imageUrl, confidence ,remediations, plantName, plantHealth} = req.body;
 
    
     console.log("scans userId", userId)
-    if (!disease || !imageMetadata || !confidence ) {
+    if (!disease || imageUrl || !confidence ) {
       return res.status(400).json({
         success: false,
         message: "Invalid scan details, missing disease or image metadata",
@@ -198,7 +198,7 @@ exports.saveToScans = async (req, res) => {
       plantHealth,
       disease,
       confidence,
-      imageMetadata,
+      imageUrl,
       remediations: remediations || null
     }
 
