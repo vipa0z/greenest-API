@@ -306,6 +306,7 @@ async trackPlantSpecies(userId, scan) {
               '_id disease confidence remediations scanTime')
               const cleanedIllnessHistory =  trackedPlant.illnessHistory.map(illness => ({
                 scanId: illness._id,// add as button
+                imageUrl: illness.imageUrl,
                 disease: illness.disease,
                 confidence: illness.confidence,
                 // remediations: illness.remediations, // too large to send

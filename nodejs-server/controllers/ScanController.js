@@ -31,7 +31,7 @@ try
    
     
     try {
-      scanId = await DBService.saveScan(userId, result,imageUrl);
+      scanId = await DBService.saveScan(userId, result, imageUrl);
     } catch (error) {
       console.error(error);
       return res

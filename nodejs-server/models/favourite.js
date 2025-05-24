@@ -16,8 +16,14 @@ const favouriteSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  image_url: {
+    type: String,
+    required: false,
+    default: ''
   }
 });
+
 
 // add an index so a user can't favourite the same species twice
 favouriteSchema.index({ user: 1, species: 1 }, { unique: true });
