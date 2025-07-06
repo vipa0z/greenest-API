@@ -2,7 +2,7 @@
 # Project Documentation
 ### You can read the full documentation [here](https://docs.google.com/document/d/11eoAMJHJyZ9cZ2btbNftsiTqk6MZY1tW/edit?usp=sharing&ouid=104399422118441291398&rtpof=true&sd=true)
 # API Documentation
-### API Documentation can be found [here](https://documenter.getpostman.com/view/40053537/2sB2cd5ydq#intro)
+## API Documentation can be found [here](https://documenter.getpostman.com/view/40053537/2sB2cd5ydq#intro)
 ![image](https://github.com/user-attachments/assets/707221a5-b19a-4743-b506-d88bea302ce1)
 
 
