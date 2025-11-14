@@ -7,6 +7,9 @@
 ## ✨ Key Features
 
 * **High Classification Accuracy**: Achieved **98.78% accuracy** in plant disease identification using ResNet-50 with transfer learning.
+<img width="921" height="402" alt="image" src="https://github.com/user-attachments/assets/dfde7736-94dc-496d-9720-2b694c2162ee" />
+
+
 * **Three-Stage AI Pipeline**:
 
   * **YOLOv8**: Robust leaf object detection and localization.
