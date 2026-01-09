@@ -54,17 +54,13 @@ The system follows a **Model-View-Controller (MVC)** design for the Node.js back
 
 ## 🖼 Screenshots
 
-### Home Page
-<img width="800" alt="Home Page" src="https://github.com/user-attachments/assets/8c6221fe-5c42-44cf-b646-a5ec5b6b9d31" />
+### Species Library
+<img width="800" alt="Species Library" src="https://github.com/user-attachments/assets/ac8cd52e-e29f-4d50-9cdc-89f759a74656" />
 
 ### Dashboard
 <img width="800" alt="Dashboard" src="https://github.com/user-attachments/assets/b2483a36-e017-4259-af3b-d6c9349ee839" />
 
-### Register Page
-<img width="800" alt="Register Page" src="https://github.com/user-attachments/assets/510639ee-6f0d-4952-b2a5-5652264b6ab3" />
 
-### Species Library
-<img width="800" alt="Species Library" src="https://github.com/user-attachments/assets/ac8cd52e-e29f-4d50-9cdc-89f759a74656" />
 
 ### Begin Scan / Upload Image
 <img width="800" alt="Begin Scan / Upload" src="https://github.com/user-attachments/assets/05bf2e8b-d2b9-43c4-bf45-5eb3d80f0374" />
