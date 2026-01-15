@@ -8,7 +8,7 @@
 
 * Full Project Documentation: [Google Docs](https://docs.google.com/document/d/11eoAMJHJyZ9cZ2btbNftsiTqk6MZY1tW/edit?usp=sharing&ouid=104399422118441291398&rtpof=true&sd=true)
 * API Documentation: [Postman](https://documenter.getpostman.com/view/40053537/2sB2cd5ydq#intro)
-* 
+
 ## ✨ Key Features
 
 * **High Classification Accuracy**: Achieved **98.78% accuracy** in plant disease identification using ResNet-50 with transfer learning.
