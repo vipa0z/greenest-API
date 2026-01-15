@@ -4,6 +4,11 @@
 
 **GreenNest** is an innovative cross-platform solution (Mobile & Web) that leverages advanced Deep Learning to help farmers, agriculturists, and plant enthusiasts detect plant leaf diseases instantly with high accuracy. By combining a state-of-the-art AI pipeline with actionable remediation suggestions (powered by Gemini LLM) and a rich plant species library, GreenNest promotes sustainable, data-driven farming practices and supports global food security.
 
+## Documentation & Resources
+
+* Full Project Documentation: [Google Docs](https://docs.google.com/document/d/11eoAMJHJyZ9cZ2btbNftsiTqk6MZY1tW/edit?usp=sharing&ouid=104399422118441291398&rtpof=true&sd=true)
+* API Documentation: [Postman](https://documenter.getpostman.com/view/40053537/2sB2cd5ydq#intro)
+* 
 ## ✨ Key Features
 
 * **High Classification Accuracy**: Achieved **98.78% accuracy** in plant disease identification using ResNet-50 with transfer learning.
@@ -47,10 +52,7 @@ The system follows a **Model-View-Controller (MVC)** design for the Node.js back
 
 ---
 
-## Documentation & Resources
 
-* Full Project Documentation: [Google Docs](https://docs.google.com/document/d/11eoAMJHJyZ9cZ2btbNftsiTqk6MZY1tW/edit?usp=sharing&ouid=104399422118441291398&rtpof=true&sd=true)
-* API Documentation: [Postman](https://documenter.getpostman.com/view/40053537/2sB2cd5ydq#intro)
 
 ## 🖼 Screenshots
 
